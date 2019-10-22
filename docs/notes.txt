@@ -1,0 +1,162 @@
+File: notes.txt
+Date: 2019-10-18 created.
+
+Installed MPLAB v8.92 for MPASMWIN v5.51, the homework assignment called 
+for version 5.50 but this should be close enough.
+
+On reviewing the code after some format cleanup is seems to me that the 
+quality of the instructional material seems poor.
+
+Code analysis reveals the resource allocations for this project are:
+
+PIC16F877A  uC Trainer
+ GPIO        Resource
+----------  ----------
+ RE2/AN7     POT
+ RC0         LCD_RS
+ RC1         LCD_E
+ RB7         LCD_D7
+ RB6         LCD_D6
+ RB5         LCD_D5
+ RB4         LCD_D4
+ RB3         LCD_D3
+ RB2         LCD_D2
+ RB1         LCD_D1
+ RB0         LCD_D0
+
+These choices are poor as they block that usage of many on-chip function 
+blocks and In-Circuit-Debug(ICD) of the PIC16F877A.
+
+The reason the ICD is not available is because RB6 and RB7 are dedicated 
+to the debug tool when a session is active.
+
+For an HD44780 parallel interface using PORTD for the data bits to the 
+LCD is a better choice.
+
+Another issue is the ADC input selection. Using AN7 as an analog input 
+requires AN6 to AN0 also be analog inputs.
+
+The result is that RE1, RE0, RA5, RA3, RA2, RA1 and RA0 will always read 
+as a digital input of zero even when configured as outputs.
+
+This means that Read-Modify-Write opcodes like BSF, BCF, ADDWF etc. will 
+not work as expected when changing bits in PORTA and PORTE.
+
+When developing a design for the PIC16F877A it is better to assign analog 
+input starting at RA0/AN0 and moving up.
+
+It would be a good idea to fix this resource allocation issue now or 
+switch to a more modern Microchip controller where the analog inputs 
+can be selected individually.
+
+For the time being we will proceed with these selections and let the 
+Original Poster(OP) resolve this later.
+
+Setup for uC Trainer:
+
+LCD Interface Connections between X10 and X29: 
+PORTB_40P_INTER, X12, Pin 1 (RB0) <====> X29, Pin 1 (LCD, DATA0)
+PORTB_40P_INTER, X12, Pin 2 (RB1) <====> X29, Pin 2 (LCD, DATA1)
+PORTB_40P_INTER, X12, Pin 3 (RB2) <====> X29, Pin 3 (LCD, DATA2)
+PORTB_40P_INTER, X12, Pin 4 (RB3) <====> X29, Pin 4 (LCD, DATA3)
+PORTB_40P_INTER, X12, Pin 5 (RB4) <====> X29, Pin 5 (LCD, DATA4)
+PORTB_40P_INTER, X12, Pin 6 (RB5) <====> X29, Pin 6 (LCD, DATA5)
+PORTB_40P_INTER, X12, Pin 7 (RB6) <====> X29, Pin 7 (LCD, DATA6)
+PORTB_40P_INTER, X12, Pin 8 (RB7) <====> X29, Pin 8 (LCD, DATA7)
+
+LCD Interface Connections between X13 and X29: 
+PORTC_40P_INTER, X13, Pin 1 (RC0) <====> X29: Pin 9  (LCD, RS) 
+PORTC_40P_INTER, X13, Pin 2 (RC1) <====> X29: Pin 10 (LCD, E)
+
+LCD Interface Connections to RW and Vo on X29:
+POWER_CONN, X27, Pin 3 (GND) <====> X29: Pin 11 (LCD, RW)
+POWER_CONN, X27, Pin 4 (GND) <====> X29: Pin 12 (LCD, Vo)
+
+POT Interface Connections between X15 and X30:
+PORTE_40P_INTER, X15, Pin 2 (RE2/AM7) <====> X30: Pin 2 (POT1, Wiper)
+
+=========================================================================
+
+Now it's time to write about how this assignment could be implemented 
+in firmware. The instructions say to build on what was completed in 
+homework assignment #1.
+
+If that is what the OP did then what was learned from assignment #1 
+was so inadequate that using it as a basis for assignment #2 will 
+failure almost certain.
+
+It appears that the OP worked hard but lacks enough experience 
+with assembly language code development to have enough of a clue 
+just how much needs to be created from scratch.
+
+=========================================================================
+
+Lets breakdown the components that need to be implemented:
+
+1. Define the PIC16F877A system clock speed as 20 MHz
+
+2. Use the symbols defined in the "p16f877a.inc" file to set the 
+   configuration words
+
+3. Implement the functions to initialize and write data to the HD44780 
+   based LCD module. Because the hardware is setup to only write to the 
+   LCD module it is not possible to read the BUSY flag in the LCD module. 
+   This will require delays after command or data writes to the LCD module.
+
+4. Implement the functions to initialize and read data from the ADC module.
+
+5. Implement a function to convert the ADC binary data to an 8-bit value 
+   scaled to the ADC VREF range in tenths of volts. This will require an 
+   8-bit by 8-bit multiply function that returns a 16-bit result.
+
+6. Implement a function that evaluates the millivolts in to the 
+   four ranges: High, Medium, Low and Unknown.
+
+7. Implement a method to measure an elapse time of 5 seconds to be used 
+   to time display updates.
+
+
+=========================================================================
+
+After going over the posted code for the past few hours it has become 
+clear that a complete rewrite will take less time than to "fix" the 
+code as posted.
+
+What is present seems to work to a point, but the implementation is 
+clumsy with inane comments.
+
+=========================================================================
+
+Date: 2019-10-19 
+
+Complete rewrite for the LCD module interface methods.
+
+Rewrite PIC hardware initialization.
+
+Rewrite ADC interface method.
+
+Add math functions to convert ADC reading to tenths of volts.
+
+Add processing to evaluate the voltage ranges and display POT1 state.
+
+Next things would be to assemble some hardware to test this code on.
+
+=========================================================================
+
+Date: 2019-10-20
+
+Test hardware complete.
+
+Bug: Bank select for EEADRH:EEADR wrong, fixed.
+
+Bug: Byte order for EEDATH:EEDATA wrong, the DA directive 
+     packs words MSB first, fixed.
+     
+Bug: Subtract order for voltage threshold wrong test, fixed.
+
+Bug: Boundary error at 4.5 and 3.0 voltage level fixed.
+
+Add: Decimal display of POT1 voltage.
+
+=========================================================================
+
