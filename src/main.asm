@@ -254,24 +254,24 @@ main:
 ;*****************************************************************
     movf    Product_8x8+1,W
     sublw   d'45'
-    btfss   STATUS,Z                ; ZERO  is set when Product_8x8+1 == CONSTANT
-    btfss   STATUS,C                ; CARRY is set when Product_8x8+1 <= CONSTANT
+    btfss   STATUS,Z                ; ZERO  is set when [Product_8x8+1] == CONSTANT
+    btfss   STATUS,C                ; CARRY is set when [Product_8x8+1] <  CONSTANT
     goto    Display_High
 
     movf    Product_8x8+1,W
-    sublw   d'30'                   ; CARRY is set when Product_8x8+1 <= CONSTANT
+    sublw   d'30'                   ; CARRY is set when [Product_8x8+1] <  CONSTANT
     btfss   STATUS,C
     goto    Display_Unknown
 
     movf    Product_8x8+1,W
     sublw   d'20'
-    btfss   STATUS,Z                ; ZERO  is set when Product_8x8+1 == CONSTANT
-    btfss   STATUS,C                ; CARRY is set when Product_8x8+1 <= CONSTANT
+    btfss   STATUS,Z                ; ZERO  is set when [Product_8x8+1] == CONSTANT
+    btfss   STATUS,C                ; CARRY is set when [Product_8x8+1] <  CONSTANT
     goto    Display_Mid
 
     movf    Product_8x8+1,W
     sublw   d'15'
-    btfss   STATUS,C                ; CARRY is set when Product_8x8+1 <= CONSTANT
+    btfss   STATUS,C                ; CARRY is set when [Product_8x8+1] <  CONSTANT
     goto    Display_Unknown
     goto    Display_Low
 
